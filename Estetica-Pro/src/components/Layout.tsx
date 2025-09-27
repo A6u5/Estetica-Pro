@@ -43,7 +43,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
       <div className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:inset-0
+        lg:translate-x-0 lg:inset-0
       `}>
         <div className="flex items-center justify-between p-4 border-b">
           <h1 className="text-xl font-semibold text-primary">Estética Pro</h1>
