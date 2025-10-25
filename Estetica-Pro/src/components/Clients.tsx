@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -18,132 +19,150 @@ import {
   Edit
 } from 'lucide-react';
 
-// Mock data
-const clients = [
-  {
-    id: 1,
-    name: 'María González',
-    email: 'maria.gonzalez@email.com',
-    phone: '+54 11 1234-5678',
-    birthDate: '1985-03-15',
-    preferences: 'Prefiere tratamientos naturales',
-    totalSpent: 4500,
-    lastVisit: '2024-01-20',
-    services: [
-      { date: '2024-01-20', service: 'Limpieza facial', price: 800 },
-      { date: '2024-01-10', service: 'Manicure', price: 600 },
-      { date: '2023-12-28', service: 'Masaje relajante', price: 1200 },
-    ]
-  },
-  {
-    id: 2,
-    name: 'Ana Rodríguez',
-    email: 'ana.rodriguez@email.com',
-    phone: '+54 11 2345-6789',
-    birthDate: '1990-07-22',
-    preferences: 'Le gusta probar nuevos tratamientos',
-    totalSpent: 3200,
-    lastVisit: '2024-01-18',
-    services: [
-      { date: '2024-01-18', service: 'Depilación', price: 900 },
-      { date: '2024-01-05', service: 'Tratamiento capilar', price: 1500 },
-    ]
-  },
-  {
-    id: 3,
-    name: 'Carlos López',
-    email: 'carlos.lopez@email.com',
-    phone: '+54 11 3456-7890',
-    birthDate: '1988-11-08',
-    preferences: 'Prefiere masajes deportivos',
-    totalSpent: 2800,
-    lastVisit: '2024-01-15',
-    services: [
-      { date: '2024-01-15', service: 'Masaje deportivo', price: 1400 },
-      { date: '2024-01-01', service: 'Limpieza facial', price: 800 },
-    ]
-  },
-];
 
 export function Clients() {
+  const [clientsData, setClientsData] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedClient, setSelectedClient] = useState<typeof clients[0] | null>(null);
+  const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone.includes(searchTerm)
+  // 🚀 Cargar clientes desde el backend
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  const fetchClients = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/clients');
+      setClientsData(res.data);
+    } catch (err) {
+      console.error('Error al obtener clientes:', err);
+    }
+  };
+
+  // ➕ Agregar nuevo cliente
+  const handleAddClient = async (newClient: any) => {
+    try {
+      const res = await axios.post('http://localhost:5000/api/clients', newClient);
+      setClientsData([...clientsData, res.data]);
+    } catch (err) {
+      console.error('Error al agregar cliente:', err);
+    }
+  };
+
+  // 🔄 Actualizar cliente existente
+  const handleUpdateClient = async (id: number, updatedClient: any) => {
+    try {
+      const res = await axios.put(`http://localhost:5000/api/clients/${id}`, updatedClient);
+      setClientsData(
+        clientsData.map((c) => (c.id === id ? res.data : c))
+      );
+    } catch (err) {
+      console.error('Error al actualizar cliente:', err);
+    }
+  };
+
+  const filteredClients = clientsData.filter((client) =>
+    client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.phone?.includes(searchTerm)
   );
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-AR');
   };
 
-  const ClientForm = ({ client, onClose }: { client?: typeof clients[0], onClose: () => void }) => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="name">Nombre completo</Label>
-          <Input 
-            id="name" 
-            placeholder="Nombre completo"
-            defaultValue={client?.name}
-          />
-        </div>
-        <div>
-          <Label htmlFor="birthDate">Fecha de nacimiento</Label>
-          <Input 
-            id="birthDate" 
-            type="date"
-            defaultValue={client?.birthDate}
-          />
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input 
-            id="email" 
-            type="email" 
-            placeholder="email@ejemplo.com"
-            defaultValue={client?.email}
-          />
-        </div>
-        <div>
-          <Label htmlFor="phone">Teléfono</Label>
-          <Input 
-            id="phone" 
-            placeholder="+54 11 1234-5678"
-            defaultValue={client?.phone}
-          />
-        </div>
-      </div>
+  // 🧾 Formulario reutilizable (Agregar / Editar)
+  const ClientForm = ({
+    client,
+    onClose,
+    onSave
+  }: {
+    client?: any;
+    onClose: () => void;
+    onSave: (data: any) => void;
+  }) => {
+    const [formData, setFormData] = useState({
+      name: client?.name || '',
+      email: client?.email || '',
+      phone: client?.phone || '',
+      birthDate: client?.birthDate || '',
+      preferences: client?.preferences || '',
+    });
 
-      <div>
-        <Label htmlFor="preferences">Preferencias y notas</Label>
-        <Textarea 
-          id="preferences" 
-          placeholder="Preferencias del cliente, alergias, notas especiales..."
-          defaultValue={client?.preferences}
-        />
-      </div>
+    const handleChange = (
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
+      setFormData({ ...formData, [e.target.id]: e.target.value });
+    };
 
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onClose}>
-          Cancelar
-        </Button>
-        <Button onClick={onClose}>
-          {client ? 'Actualizar' : 'Guardar'} Cliente
-        </Button>
+    const handleSubmit = () => {
+      if (client) {
+        onSave({ ...formData, id: client.id });
+      } else {
+        onSave(formData);
+      }
+      onClose();
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="name">Nombre completo</Label>
+            <Input id="name" value={formData.name} onChange={handleChange} />
+          </div>
+          <div>
+            <Label htmlFor="birthDate">Fecha de nacimiento</Label>
+            <Input
+              id="birthDate"
+              type="date"
+              value={formData.birthDate}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor="phone">Teléfono</Label>
+            <Input id="phone" value={formData.phone} onChange={handleChange} />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="preferences">Preferencias y notas</Label>
+          <Textarea
+            id="preferences"
+            value={formData.preferences}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit}>
+            {client ? 'Actualizar' : 'Guardar'} Cliente
+          </Button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* 🔍 Header */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4 flex-1">
           <div className="relative flex-1 max-w-md">
@@ -156,7 +175,7 @@ export function Clients() {
             />
           </div>
         </div>
-        
+
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -168,15 +187,21 @@ export function Clients() {
             <DialogHeader>
               <DialogTitle>Agregar Nuevo Cliente</DialogTitle>
             </DialogHeader>
-            <ClientForm onClose={() => setIsAddDialogOpen(false)} />
+            <ClientForm
+              onClose={() => setIsAddDialogOpen(false)}
+              onSave={handleAddClient}
+            />
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Clients Grid */}
+      {/* 🧍‍♀️ Clients Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredClients.map((client) => (
-          <Card key={client.id} className="cursor-pointer hover:shadow-md transition-shadow">
+          <Card
+            key={client.id}
+            className="cursor-pointer hover:shadow-md transition-shadow"
+          >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
@@ -186,12 +211,15 @@ export function Clients() {
                   <div>
                     <CardTitle className="text-base">{client.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Última visita: {formatDate(client.lastVisit)}
+                      Última visita:{' '}
+                      {client.lastVisit
+                        ? formatDate(client.lastVisit)
+                        : 'Sin registro'}
                     </p>
                   </div>
                 </div>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={() => setSelectedClient(client)}
                 >
@@ -199,124 +227,46 @@ export function Clients() {
                 </Button>
               </div>
             </CardHeader>
-            
+
             <CardContent className="pt-0 space-y-3">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4" />
                 {client.email}
               </div>
-              
+
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4" />
                 {client.phone}
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm">
                   <DollarSign className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">${client.totalSpent.toLocaleString()}</span>
+                  <span className="font-medium">
+                    ${client.totalSpent?.toLocaleString() || 0}
+                  </span>
                 </div>
                 <Badge variant="secondary">
-                  {client.services.length} servicios
+                  {client.services?.length || 0} servicios
                 </Badge>
               </div>
-
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full"
-                onClick={() => setSelectedClient(client)}
-              >
-                Ver Historial
-              </Button>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Client Detail Dialog */}
+      {/* 🧾 Editar cliente (Dialog) */}
       <Dialog open={!!selectedClient} onOpenChange={() => setSelectedClient(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <User className="h-5 w-5 text-primary" />
-              </div>
-              {selectedClient?.name}
-            </DialogTitle>
+            <DialogTitle>Editar Cliente</DialogTitle>
           </DialogHeader>
-          
           {selectedClient && (
-            <Tabs defaultValue="info" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="info">Información</TabsTrigger>
-                <TabsTrigger value="history">Historial</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="info" className="space-y-4">
-                <ClientForm 
-                  client={selectedClient} 
-                  onClose={() => setSelectedClient(null)} 
-                />
-              </TabsContent>
-              
-              <TabsContent value="history" className="space-y-4">
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <div className="text-2xl font-bold text-green-600">
-                        ${selectedClient.totalSpent.toLocaleString()}
-                      </div>
-                      <p className="text-sm text-muted-foreground">Total gastado</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {selectedClient.services.length}
-                      </div>
-                      <p className="text-sm text-muted-foreground">Servicios totales</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <div className="text-2xl font-bold text-purple-600">
-                        {formatDate(selectedClient.lastVisit)}
-                      </div>
-                      <p className="text-sm text-muted-foreground">Última visita</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Historial de Servicios</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {selectedClient.services.map((service, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <Calendar className="h-5 w-5 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">{service.service}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {formatDate(service.date)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium text-green-600">
-                              ${service.price.toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+            <ClientForm
+              client={selectedClient}
+              onClose={() => setSelectedClient(null)}
+              onSave={(data) => handleUpdateClient(data.id, data)}
+            />
           )}
         </DialogContent>
       </Dialog>

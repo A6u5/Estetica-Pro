@@ -22,3 +22,5 @@ pnpm-debug.log*
 # Optional: lock files si no quieres subirlos
 # package-lock.json
 # yarn.lock
+
+.env
