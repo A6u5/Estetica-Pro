@@ -178,7 +178,7 @@ export function Clients() {
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button variant="buttonAdd">
               <Plus className="h-4 w-4 mr-2" />
               Nuevo Cliente
             </Button>

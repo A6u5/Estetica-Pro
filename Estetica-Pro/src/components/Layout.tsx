@@ -1,15 +1,7 @@
 import { useState } from 'react';
-import { 
-  Calendar, 
-  Users, 
-  CreditCard, 
-  Package, 
-  BarChart3, 
-  Home,
-  Menu,
-  X
-} from 'lucide-react';
+import { Calendar, Users, CreditCard, Package, BarChart3, Home, Menu, X } from 'lucide-react';
 import { Button } from './ui/button';
+import logo from '../assets/logo.png';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -41,12 +33,13 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform
+        fixed inset-y-0 left-0 z-50 w-64 bg-header border-r transform transition-transform
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:inset-0
       `}>
-        <div className="flex items-center justify-between p-4 border-b">
-          <h1 className="text-xl font-semibold text-primary">Estética Pro</h1>
+        <div className="flex items-center justify-between pt-2 border-b">
+          <img style={{ width: "100%", height: "235px", marginTop: "-30px", marginBottom: "-45px" }} 
+          src={logo} alt="Mi logo" />
           <Button
             variant="ghost"
             size="sm"
@@ -63,7 +56,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
             return (
               <Button
                 key={item.id}
-                variant={currentView === item.id ? "default" : "ghost"}
+                variant={currentView === item.id ? "buttonAdd" : "ghost"}
                 className="w-full justify-start gap-3"
                 onClick={() => {
                   onViewChange(item.id);
@@ -81,7 +74,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
       {/* Main content */}
       <div className="lg:ml-64">
         {/* Header */}
-        <header className="bg-card border-b p-4 flex items-center justify-between">
+        <header className="bg-header border-b p-4 flex items-center justify-between">
           <Button
             variant="ghost"
             size="sm"

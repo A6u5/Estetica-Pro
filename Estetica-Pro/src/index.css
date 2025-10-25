@@ -1505,6 +1505,7 @@
   .border {
     border-style: var(--tw-border-style);
     border-width: 1px;
+    border-color: #d48c73;
   }
 
   .border-\[1\.5px\] {
@@ -1632,6 +1633,18 @@
     background-color: var(--card);
   }
 
+  .bg-header {
+    background-color: var(--header);
+    color: white;
+  }
+
+  .bg-btn-add{
+    background-color: #5d4032;
+  }
+
+  .bg-btn-add:hover{
+    background-color: #916b57;
+  }
   .bg-destructive {
     background-color: var(--destructive);
   }
@@ -4417,9 +4430,10 @@
 
 :root {
   --font-size: 14px;
-  --background: #fff;
+  --background: #F0E6E0;
   --foreground: oklch(.145 0 0);
   --card: #fff;
+  --header: #866e62;
   --card-foreground: oklch(.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(.145 0 0);
