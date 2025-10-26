@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,18 +6,8 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { 
-  Plus, 
-  Search, 
-  Phone, 
-  Mail, 
-  User,
-  Calendar,
-  DollarSign,
-  Edit
-} from 'lucide-react';
-
+import { Plus, Search, Phone, Mail, User, DollarSign, Edit } from 'lucide-react';
+import { getClients, addClient, updateClient } from "../services/ClientService";
 
 export function Clients() {
   const [clientsData, setClientsData] = useState<any[]>([]);
@@ -33,8 +22,8 @@ export function Clients() {
 
   const fetchClients = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/clients');
-      setClientsData(res.data);
+      const res = await getClients();
+      setClientsData(res);
     } catch (err) {
       console.error('Error al obtener clientes:', err);
     }
@@ -43,8 +32,8 @@ export function Clients() {
   // ➕ Agregar nuevo cliente
   const handleAddClient = async (newClient: any) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/clients', newClient);
-      setClientsData([...clientsData, res.data]);
+      const res = await addClient(newClient);
+      setClientsData([...clientsData, res]);
     } catch (err) {
       console.error('Error al agregar cliente:', err);
     }
@@ -53,16 +42,16 @@ export function Clients() {
   // 🔄 Actualizar cliente existente
   const handleUpdateClient = async (id: number, updatedClient: any) => {
     try {
-      const res = await axios.put(`http://localhost:5000/api/clients/${id}`, updatedClient);
+      const res = await updateClient(id, updatedClient);
       setClientsData(
-        clientsData.map((c) => (c.id === id ? res.data : c))
+        clientsData.map((c) => (c.id === id ? res : c))
       );
     } catch (err) {
       console.error('Error al actualizar cliente:', err);
     }
   };
 
-  const filteredClients = clientsData.filter((client) =>
+  const filteredClients = clientsData?.filter((client) =>
     client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone?.includes(searchTerm)
@@ -197,7 +186,7 @@ export function Clients() {
 
       {/* 🧍‍♀️ Clients Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredClients.map((client) => (
+        {filteredClients?.map((client) => (
           <Card
             key={client.id}
             className="cursor-pointer hover:shadow-md transition-shadow"

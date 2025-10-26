@@ -325,7 +325,7 @@ export function Inventory() {
             <CardTitle>Gestión de Inventario</CardTitle>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button variant="buttonAdd">
                   <Plus className="h-4 w-4 mr-2" />
                   Nuevo Producto
                 </Button>
@@ -435,7 +435,7 @@ export function Inventory() {
                       {product.currentStock <= product.minimumStock && (
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button size="sm" className="flex-1">
+                            <Button variant="buttonAdd" size="sm" className="flex-1">
                               <ShoppingCart className="h-4 w-4 mr-1" />
                               Reabastecer
                             </Button>

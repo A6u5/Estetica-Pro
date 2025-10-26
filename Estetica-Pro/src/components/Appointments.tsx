@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -6,246 +6,257 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { 
-  Plus, 
-  Calendar, 
-  Clock, 
-  User,
-  Phone,
-  ChevronLeft,
-  ChevronRight,
-  Edit,
-  Trash2
-} from 'lucide-react';
-
-// Mock data
-const appointments = [
-  {
-    id: 1,
-    date: '2024-01-27',
-    time: '09:00',
-    clientName: 'María González',
-    clientPhone: '+54 11 1234-5678',
-    service: 'Limpieza facial',
-    duration: 60,
-    price: 800,
-    status: 'confirmado'
-  },
-  {
-    id: 2,
-    date: '2024-01-27',
-    time: '10:30',
-    clientName: 'Ana Rodríguez',
-    clientPhone: '+54 11 2345-6789',
-    service: 'Manicure',
-    duration: 45,
-    price: 600,
-    status: 'en_progreso'
-  },
-  {
-    id: 3,
-    date: '2024-01-27',
-    time: '12:00',
-    clientName: 'Carlos López',
-    clientPhone: '+54 11 3456-7890',
-    service: 'Masaje relajante',
-    duration: 90,
-    price: 1200,
-    status: 'pendiente'
-  },
-  {
-    id: 4,
-    date: '2024-01-28',
-    time: '14:00',
-    clientName: 'Sofia Martín',
-    clientPhone: '+54 11 4567-8901',
-    service: 'Depilación',
-    duration: 120,
-    price: 900,
-    status: 'pendiente'
-  },
-  {
-    id: 5,
-    date: '2024-01-28',
-    time: '16:30',
-    clientName: 'Laura Pérez',
-    clientPhone: '+54 11 5678-9012',
-    service: 'Tratamiento capilar',
-    duration: 90,
-    price: 1500,
-    status: 'pendiente'
-  },
-];
-
-const services = [
-  { name: 'Limpieza facial', duration: 60, price: 800 },
-  { name: 'Manicure', duration: 45, price: 600 },
-  { name: 'Pedicure', duration: 60, price: 700 },
-  { name: 'Masaje relajante', duration: 90, price: 1200 },
-  { name: 'Masaje deportivo', duration: 90, price: 1400 },
-  { name: 'Depilación', duration: 120, price: 900 },
-  { name: 'Tratamiento capilar', duration: 90, price: 1500 },
-  { name: 'Tratamiento facial', duration: 75, price: 1000 },
-];
-
-const timeSlots = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-  '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
-  '18:00', '18:30'
-];
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+import { getServices, getStatus } from '../services/MasterDataService';
+import { getClients } from '../services/ClientService';
+import { getAppointments, createAppointment, updateAppointment, deleteAppointment } from "../services/AppointmentService";
+import { Plus, Calendar, Clock, User, Phone, ChevronLeft, ChevronRight, Edit, Trash2 } from 'lucide-react';
+import { getStatusColor, getStatusText, formatDate, formatDateISO, getWeekDates, timeSlots} from '../helpers/AppointmentComponentHelper';
 
 export function Appointments() {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [appointments, setAppointments] = useState<any[]>([]);
   const [selectedView, setSelectedView] = useState<'day' | 'week'>('day');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<typeof appointments[0] | null>(null);
+  const [currentDayAppointments, setCurrentDayAppointments] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [statuses, setStatuses] = useState<any[]>([]);
+  const [clientsData, setClientsData] = useState<any[]>([]);
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('es-AR', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
 
-  const formatDateISO = (date: Date) => {
-    return date.toISOString().split('T')[0];
-  };
+  useEffect(() => {
+    fetchServices();
+    fetchClients();
+    fetchStatus();
+  }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmado': return 'bg-green-100 text-green-800';
-      case 'en_progreso': return 'bg-blue-100 text-blue-800';
-      case 'pendiente': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelado': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const fetchServices = async () => {
+    try {
+      const res = await getServices();
+      setServices(res);
+    } catch (error) {
+      console.error('Error al traer los servicios:', error);
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'confirmado': return 'Confirmado';
-      case 'en_progreso': return 'En progreso';
-      case 'pendiente': return 'Pendiente';
-      case 'cancelado': return 'Cancelado';
-      default: return status;
+  const fetchStatus = async () => {
+    try {
+      const res = await getStatus();
+      setStatuses(res);
+    } catch (error) {
+      console.error('Error al traer los estados:', error);
     }
   };
 
-  const getCurrentDayAppointments = () => {
+  const fetchClients = async () => {
+    try {
+      const res = await getClients();
+      setClientsData(res);
+    } catch (err) {
+      console.error('Error al obtener clientes:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (appointments.length === 0) return;
     const currentDateStr = formatDateISO(currentDate);
-    return appointments.filter(apt => apt.date === currentDateStr);
-  };
 
-  const getWeekDates = () => {
-    const start = new Date(currentDate);
-    const day = start.getDay();
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    start.setDate(diff);
-    
-    const week = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(start);
-      date.setDate(start.getDate() + i);
-      week.push(date);
+    const todayAppointments = appointments.filter(a => {
+      const appointmentDateStr = new Date(a.appointment_date)
+        .toISOString()
+        .split("T")[0];
+      return appointmentDateStr === currentDateStr;
+    });
+    setCurrentDayAppointments(todayAppointments);
+  }, [appointments, currentDate]); 
+
+  const fetchAppointments = async () => {
+    try {
+      const res = await getAppointments();
+      setAppointments(res);
+    } catch (err) {
+      console.error('Error al obtener turnos:', err);
     }
-    return week;
   };
 
-  const getWeekAppointments = () => {
-    const weekDates = getWeekDates();
-    const weekStart = formatDateISO(weekDates[0]);
-    const weekEnd = formatDateISO(weekDates[6]);
-    
-    return appointments.filter(apt => apt.date >= weekStart && apt.date <= weekEnd);
+  const handleAddAppointment = async (newAppointment: any) => {
+    try {
+      const res = await createAppointment(newAppointment);
+      setAppointments(prev => [...prev, res]);
+    } catch (err) {
+      console.error('Error al agregar turno:', err);
+    }
   };
 
-  const AppointmentForm = ({ appointment, onClose }: { appointment?: typeof appointments[0], onClose: () => void }) => {
-    const [selectedService, setSelectedService] = useState(appointment?.service || '');
+  const handleUpdateAppointment = async (id: number, updatedAppointment: any) => {
+      try {
+        const res = await updateAppointment(id, updatedAppointment);
+        setAppointments(
+          appointments.map((c) => (c.id === id ? res : c))
+        );
+      } catch (err) {
+        console.error('Error al actualizar turno:', err);
+      }
+    };
+
+  const handleDeleteAppointment = async (appointmentId: number) => {
+    try {
+      await deleteAppointment(appointmentId); 
+      setAppointments(prev => prev.filter(a => a.id !== appointmentId));
+    } catch (err) {
+      console.error('Error al eliminar turno:', err);
+    }
+  };
+
+  const AppointmentForm = ({ appointment, onClose, onSave }: { appointment?: any, onClose: () => void, onSave: (data: any) => void; }) => {
+    const [selectedService, setSelectedService] = useState<string>(appointment?.service?.name || '');
     const [selectedServiceData, setSelectedServiceData] = useState<typeof services[0] | null>(null);
+    const [selectedStatus, setSelectedStatus] = useState<number | ''>('');
+    const [selectedClient, setSelectedClient] = useState<number | ''>(appointment?.client?.id || '');
+    const [selectedClientData, setSelectedClientData] = useState<any>(appointment?.client || null);
+  
+    useEffect(() => {
+      setSelectedStatus(appointment?.status ? appointment.status.id : statuses[1].id);
+    }, [])
 
     const handleServiceChange = (serviceName: string) => {
       setSelectedService(serviceName);
       const serviceData = services.find(s => s.name === serviceName);
       setSelectedServiceData(serviceData || null);
+      setFormData(prev => ({ ...prev, service_id: serviceData.id }))
+    };
+
+    const handleStatusChange = (statusId: number) => {
+      setSelectedStatus(statusId);
+      setFormData(prev => ({ ...prev, status_id: statusId }))
+    };
+
+    const handleClientChange = (clientId: number) => {
+      setSelectedClient(clientId);
+      const clientData = clientsData.find(s => s.id === clientId);
+      setSelectedClientData(clientData || null);
+      setFormData(prev => ({ ...prev, client_id: clientId }))
+    };
+
+    const [formData, setFormData] = useState({
+      client_id: appointment?.client?.id || '',
+      service_id: appointment?.service?.id || '',
+      status_id: appointment?.status?.id || 2,
+      appointment_date: appointment ? formatDateISO(new Date(appointment.appointment_date)) : '',
+      appointment_time: appointment?.appointment_time || '',
+      professional: appointment?.professional || '',
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setFormData({ ...formData, [e.target.id]: e.target.value });
+    };
+
+    const handleSubmit = () => {
+      if (appointment) onSave({ ...formData, id: appointment.id });
+      else onSave(formData);
+      onClose();
     };
 
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="clientName">Cliente</Label>
-            <Input 
-              id="clientName" 
-              placeholder="Nombre del cliente"
-              defaultValue={appointment?.clientName}
-            />
+            <Label htmlFor="service">Cliente</Label>
+            <Select value={selectedClient} onValueChange={handleClientChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                {clientsData.map(client => (
+                  <SelectItem key={client.name} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="clientPhone">Teléfono</Label>
             <Input 
               id="clientPhone" 
+              readOnly
               placeholder="+54 11 1234-5678"
-              defaultValue={appointment?.clientPhone}
+              defaultValue={selectedClientData?.phone}
             />
           </div>
         </div>
         
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <Label htmlFor="date">Fecha</Label>
+            <Label htmlFor="appointment_date">Fecha</Label>
             <Input 
-              id="date" 
+              id="appointment_date" 
               type="date"
-              defaultValue={appointment?.date || formatDateISO(currentDate)}
+              value={formData.appointment_date} onChange={handleChange}
             />
           </div>
           <div>
-            <Label htmlFor="time">Hora</Label>
-            <Select defaultValue={appointment?.time}>
+            <Label htmlFor="appointment_time">Hora</Label>
+            <Select 
+            value={appointment?.appointment_time?.slice(0,5) || formData.appointment_time}
+            onValueChange={(val) => setFormData(prev => ({ ...prev, appointment_time: val }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar hora" />
               </SelectTrigger>
               <SelectContent>
-                {timeSlots.map(time => (
-                  <SelectItem key={time} value={time}>{time}</SelectItem>
+                {timeSlots.map(appointment_time => (
+                  <SelectItem key={appointment_time} value={appointment_time}>{appointment_time}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
             <Label htmlFor="status">Estado</Label>
-            <Select defaultValue={appointment?.status || 'pendiente'}>
+            <Select 
+            value={selectedStatus}
+            onValueChange={(val) => handleStatusChange(Number(val))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pendiente">Pendiente</SelectItem>
-                <SelectItem value="confirmado">Confirmado</SelectItem>
-                <SelectItem value="en_progreso">En progreso</SelectItem>
-                <SelectItem value="cancelado">Cancelado</SelectItem>
+                {statuses.map(status => (
+                  <SelectItem key={status.id} value={status.id}>
+                    {status.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="service">Servicio</Label>
-          <Select value={selectedService} onValueChange={handleServiceChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar servicio" />
-            </SelectTrigger>
-            <SelectContent>
-              {services.map(service => (
-                <SelectItem key={service.name} value={service.name}>
-                  {service.name} - {service.duration}min - ${service.price}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="professional">Profesional asignado</Label>
+            <Input 
+              id="professional" 
+              placeholder="Nombre del profesional asignado"
+              value={formData.professional} onChange={handleChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor="service">Servicio</Label>
+            <Select value={selectedService} onValueChange={handleServiceChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar servicio" />
+              </SelectTrigger>
+              <SelectContent>
+                {services.map(service => (
+                  <SelectItem key={service.name} value={service.name}>
+                    {service.name} - {service.duration}min - ${service.price}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {selectedServiceData && (
@@ -261,7 +272,7 @@ export function Appointments() {
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={onClose}>
+          <Button onClick={handleSubmit}>
             {appointment ? 'Actualizar' : 'Agendar'} Turno
           </Button>
         </div>
@@ -288,7 +299,7 @@ export function Appointments() {
             </Button>
             
             <h2 className="text-lg font-semibold min-w-[300px] text-center">
-              {selectedView === 'day' ? formatDate(currentDate) : `Semana del ${formatDate(getWeekDates()[0])}`}
+              {selectedView === 'day' ? formatDate(currentDate) : `Semana del ${formatDate(getWeekDates(currentDate)[0])}`}
             </h2>
             
             <Button
@@ -322,7 +333,7 @@ export function Appointments() {
 
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button variant="buttonAdd">
                 <Plus className="h-4 w-4 mr-2" />
                 Nuevo Turno
               </Button>
@@ -331,7 +342,9 @@ export function Appointments() {
               <DialogHeader>
                 <DialogTitle>Agendar Nuevo Turno</DialogTitle>
               </DialogHeader>
-              <AppointmentForm onClose={() => setIsAddDialogOpen(false)} />
+              <AppointmentForm 
+              onClose={() => setIsAddDialogOpen(false)} 
+              onSave={handleAddAppointment}/>
             </DialogContent>
           </Dialog>
         </div>
@@ -348,33 +361,33 @@ export function Appointments() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {getCurrentDayAppointments().length > 0 ? (
-                getCurrentDayAppointments().map((appointment) => (
+              {currentDayAppointments.length > 0 ? (
+                currentDayAppointments.map((appointment) => (
                   <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
                     <div className="flex items-center gap-4">
                       <div className="text-center">
-                        <div className="text-lg font-semibold">{appointment.time}</div>
-                        <div className="text-xs text-muted-foreground">{appointment.duration}min</div>
+                        <div className="text-lg font-semibold">{appointment.appointment_time}</div>
+                        {/* <div className="text-xs text-muted-foreground">{appointment.service.duration}min</div> */}
                       </div>
                       
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{appointment.clientName}</span>
-                          <Badge className={getStatusColor(appointment.status)}>
-                            {getStatusText(appointment.status)}
+                          <span className="font-medium">{appointment.client.name}</span>
+                          <Badge className={getStatusColor(appointment.status.name)}>
+                            {getStatusText(appointment.status.name)}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-1">{appointment.service}</p>
+                        <p className="text-sm text-muted-foreground mb-1">{appointment.service.name}</p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Phone className="h-3 w-3" />
-                          {appointment.clientPhone}
+                          {appointment.client.phone}
                         </div>
                       </div>
                       
                       <div className="text-right">
                         <div className="text-lg font-semibold text-green-600">
-                          ${appointment.price.toLocaleString()}
+                          {/* ${appointment.service.price.toLocaleString()} */}
                         </div>
                       </div>
                     </div>
@@ -387,7 +400,10 @@ export function Appointments() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" 
+                      size="sm"
+                      onClick={() => handleDeleteAppointment(appointment.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -404,9 +420,9 @@ export function Appointments() {
         </Card>
       ) : (
         <div className="grid grid-cols-7 gap-4">
-          {getWeekDates().map((date, index) => {
+          {getWeekDates(currentDate).map((date, index) => {
             const dateStr = formatDateISO(date);
-            const dayAppointments = appointments.filter(apt => apt.date === dateStr);
+            const dayAppointments = appointments.filter(apt => formatDateISO(new Date(apt.appointment_date)) === dateStr);
             
             return (
               <Card key={index} className="min-h-[300px]">
@@ -424,9 +440,9 @@ export function Appointments() {
                       className="p-2 text-xs bg-primary/10 rounded cursor-pointer hover:bg-primary/20"
                       onClick={() => setSelectedAppointment(appointment)}
                     >
-                      <div className="font-medium">{appointment.time}</div>
-                      <div className="truncate">{appointment.clientName}</div>
-                      <div className="text-muted-foreground truncate">{appointment.service}</div>
+                      <div className="font-medium">{appointment.appointment_time}</div>
+                      <div className="truncate">{appointment.client.name}</div>
+                      <div className="text-muted-foreground truncate">{appointment.service.name}</div>
                     </div>
                   ))}
                 </CardContent>
@@ -444,6 +460,7 @@ export function Appointments() {
           </DialogHeader>
           {selectedAppointment && (
             <AppointmentForm 
+              onSave={(data) => handleUpdateAppointment(data.id, data)}
               appointment={selectedAppointment} 
               onClose={() => setSelectedAppointment(null)} 
             />

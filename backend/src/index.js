@@ -1,7 +1,9 @@
 import express from "express";
 import cors from "cors";
-import { pool } from "./db.js";
 import { clientRouter } from "./routes/clientRoutes.js";
+import { initDB } from "./initDB.js";
+import { appointmentRouter } from "./routes/appointmentRoutes.js";
+import { masterDataRouter } from "./routes/masterDataRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -9,26 +11,8 @@ app.use(express.json());
 
 // Rutas
 app.use("/api/clients", clientRouter);
-
-// Crear tabla clientes si no existe
-async function initDB() {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS clientes (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        email VARCHAR(100),
-        phone VARCHAR(20),
-        birthDate DATE,
-        preferences TEXT,
-        fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    console.log("✅ Tabla 'clientes' lista");
-  } catch (err) {
-    console.error("❌ Error creando tabla clientes:", err);
-  }
-}
+app.use("/api/appointments", appointmentRouter);
+app.use("/api/masterData", masterDataRouter);
 
 // Inicializar DB y levantar servidor
 initDB();
