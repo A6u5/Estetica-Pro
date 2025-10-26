@@ -13,7 +13,7 @@ export default function App() {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onViewChange={setCurrentView}/>;
       case 'clients':
         return <Clients />;
       case 'appointments':
@@ -25,7 +25,7 @@ export default function App() {
       case 'reports':
         return <Reports />;
       default:
-        return <Dashboard />;
+        return <Dashboard onViewChange={setCurrentView}/>;
     }
   };
 

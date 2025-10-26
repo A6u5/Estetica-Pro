@@ -1,15 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { 
-  DollarSign, 
-  Users, 
-  Calendar, 
-  Package,
-  TrendingUp,
-  Clock,
-  AlertTriangle
-} from 'lucide-react';
+import { DollarSign, Users, Calendar, Package, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
+import { getStatusColor, getStatusText, formatDateISO } from '../helpers/AppointmentComponentHelper';
+import { getAppointments } from "../services/AppointmentService";
+import { useEffect, useState } from 'react';
 
 // Mock data
 const todayStats = {
@@ -19,13 +14,13 @@ const todayStats = {
   lowStock: 3
 };
 
-const todayAppointments = [
-  { id: 1, time: '09:00', client: 'María González', service: 'Limpieza facial', status: 'confirmado' },
-  { id: 2, time: '10:30', client: 'Ana Rodríguez', service: 'Manicure', status: 'en_progreso' },
-  { id: 3, time: '12:00', client: 'Carlos López', service: 'Masaje relajante', status: 'pendiente' },
-  { id: 4, time: '14:00', client: 'Sofia Martín', service: 'Depilación', status: 'pendiente' },
-  { id: 5, time: '16:30', client: 'Laura Pérez', service: 'Tratamiento capilar', status: 'pendiente' },
-];
+// const todayAppointments = [
+//   { id: 1, time: '09:00', client: 'María González', service: 'Limpieza facial', status: 'confirmado' },
+//   { id: 2, time: '10:30', client: 'Ana Rodríguez', service: 'Manicure', status: 'en_progreso' },
+//   { id: 3, time: '12:00', client: 'Carlos López', service: 'Masaje relajante', status: 'pendiente' },
+//   { id: 4, time: '14:00', client: 'Sofia Martín', service: 'Depilación', status: 'pendiente' },
+//   { id: 5, time: '16:30', client: 'Laura Pérez', service: 'Tratamiento capilar', status: 'pendiente' },
+// ];
 
 const lowStockItems = [
   { name: 'Crema hidratante', current: 2, minimum: 5 },
@@ -43,24 +38,52 @@ const weeklyRevenue = [
   { day: 'Dom', amount: 900 },
 ];
 
-export function Dashboard() {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmado': return 'bg-green-100 text-green-800';
-      case 'en_progreso': return 'bg-blue-100 text-blue-800';
-      case 'pendiente': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+export function Dashboard({ onViewChange }: { onViewChange: (view: string) => void }) {
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
+  const [todayAppointmentsCountBytatus, setTodayAppointmentsCountBytatus] = useState<any>([]);
+  
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const fetchAppointments = async () => {
+    try {
+      const res = await getAppointments();
+      setAppointments(res);
+    } catch (err) {
+      console.error('Error al obtener turnos:', err);
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'confirmado': return 'Confirmado';
-      case 'en_progreso': return 'En progreso';
-      case 'pendiente': return 'Pendiente';
-      default: return status;
-    }
-  };
+  useEffect(() => {
+    if (appointments.length === 0) return;
+    const today = new Date();
+    const currentDateStr = formatDateISO(today);
+
+    const todayAppointments = appointments.filter(a => {
+      const appointmentDateStr = new Date(a.appointment_date)
+        .toISOString()
+        .split("T")[0];
+      return appointmentDateStr === currentDateStr;
+    });
+    setTodayAppointments(todayAppointments);
+    countAppointmentsByStatus();    
+  }, [appointments]); 
+
+  const countAppointmentsByStatus = () => {
+    const counts = { completed: 0, pending: 0 };
+
+    todayAppointments.forEach((apt) => {
+      if (apt.status?.name === 'Confirmado' || apt.status?.name === 'Completado') {
+        counts.completed += 1;
+      } else if (apt.status?.name === 'Pendiente') {
+        counts.pending += 1;
+      }
+    });
+
+    setTodayAppointmentsCountBytatus(counts);
+  }
 
   return (
     <div className="space-y-6">
@@ -86,9 +109,9 @@ export function Dashboard() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{todayStats.appointments}</div>
+            <div className="text-2xl font-bold">{todayAppointments.length}</div>
             <p className="text-xs text-muted-foreground">
-              5 completados, 3 pendientes
+              {todayAppointmentsCountBytatus.completed} completados, {todayAppointmentsCountBytatus.pending} pendientes
             </p>
           </CardContent>
         </Card>
@@ -135,18 +158,21 @@ export function Dashboard() {
                 <div key={appointment.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium">{appointment.time}</span>
-                      <Badge className={getStatusColor(appointment.status)}>
-                        {getStatusText(appointment.status)}
+                      <span className="font-medium">{appointment.appointment_time}</span>
+                      <Badge className={getStatusColor(appointment.status.name)}>
+                        {getStatusText(appointment.status.name)}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{appointment.client}</p>
-                    <p className="text-sm">{appointment.service}</p>
+                    <p className="text-sm text-muted-foreground">{appointment.client.name}</p>
+                    <p className="text-sm">{appointment.service.name}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <Button variant="outline" className="w-full mt-4">
+            <Button 
+            variant="outline" 
+            className="w-full mt-4"
+            onClick={() => onViewChange("appointments")}>
               Ver todos los turnos
             </Button>
           </CardContent>
