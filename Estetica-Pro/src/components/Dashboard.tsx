@@ -5,6 +5,8 @@ import { DollarSign, Users, Calendar, Package, TrendingUp, Clock, AlertTriangle 
 import { getStatusColor, getStatusText, formatDateISO } from '../helpers/AppointmentComponentHelper';
 import { getAppointments } from "../services/AppointmentService";
 import { useEffect, useState } from 'react';
+import { getAllPayments } from '../services/PaymentService';
+import { revenueChangeVsYesterday, todayRevenue } from '../helpers/PaymentComponentHelper';
 
 // Mock data
 const todayStats = {
@@ -13,14 +15,6 @@ const todayStats = {
   clients: 6,
   lowStock: 3
 };
-
-// const todayAppointments = [
-//   { id: 1, time: '09:00', client: 'María González', service: 'Limpieza facial', status: 'confirmado' },
-//   { id: 2, time: '10:30', client: 'Ana Rodríguez', service: 'Manicure', status: 'en_progreso' },
-//   { id: 3, time: '12:00', client: 'Carlos López', service: 'Masaje relajante', status: 'pendiente' },
-//   { id: 4, time: '14:00', client: 'Sofia Martín', service: 'Depilación', status: 'pendiente' },
-//   { id: 5, time: '16:30', client: 'Laura Pérez', service: 'Tratamiento capilar', status: 'pendiente' },
-// ];
 
 const lowStockItems = [
   { name: 'Crema hidratante', current: 2, minimum: 5 },
@@ -42,9 +36,12 @@ export function Dashboard({ onViewChange }: { onViewChange: (view: string) => vo
   const [appointments, setAppointments] = useState<any[]>([]);
   const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
   const [todayAppointmentsCountBytatus, setTodayAppointmentsCountBytatus] = useState<any>([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const { change } = revenueChangeVsYesterday(payments);
   
   useEffect(() => {
     fetchAppointments();
+    fetchPayments();
   }, []);
 
   const fetchAppointments = async () => {
@@ -53,6 +50,15 @@ export function Dashboard({ onViewChange }: { onViewChange: (view: string) => vo
       setAppointments(res);
     } catch (err) {
       console.error('Error al obtener turnos:', err);
+    }
+  };
+
+  const fetchPayments = async () => {
+    try {
+      const res = await getAllPayments();
+      setPayments(res);
+    } catch (err) {
+      console.error('Error al obtener pagos:', err);
     }
   };
 
@@ -95,10 +101,10 @@ export function Dashboard({ onViewChange }: { onViewChange: (view: string) => vo
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${todayStats.revenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${todayRevenue(payments).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               <TrendingUp className="inline h-3 w-3 mr-1" />
-              +12% vs ayer
+              +{change}% vs ayer
             </p>
           </CardContent>
         </Card>

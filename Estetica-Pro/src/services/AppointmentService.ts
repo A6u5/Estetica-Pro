@@ -21,3 +21,8 @@ export const deleteAppointment = async (id: number) => {
   const res = await axios.delete(`${API_URL}/${id}`);
   return res.data;
 };
+
+export const getAppointmentsWithoutPayment = async () => {
+  const res = await axios.get(`${API_URL}/appointmentsWithoutPayment`);
+  return res.data;
+};

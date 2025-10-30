@@ -94,6 +94,22 @@ export const initDB = async () => {
     } catch (err) {
         console.error("Error creando tabla turnos:", err);
     }
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS payments (
+                id SERIAL PRIMARY KEY,
+                appointment_id INT NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,  
+                payment_method_id INT NOT NULL REFERENCES payment_methods(id),
+                payment_status_id INT NOT NULL REFERENCES payment_status(id),
+                amount NUMERIC(10,2),
+                payment_date DATE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        console.log("Tabla 'payments' lista");
+    } catch (err) {
+        console.error("Error creando tabla pagos:", err);
+    }
 
     // insert de datos maestras
     try{
@@ -160,7 +176,8 @@ export const initDB = async () => {
             INSERT INTO payment_status (name)
             VALUES
                 ('Pendiente'),
-                ('Pagado')
+                ('Pagado'),
+                ('Señado')
             ON CONFLICT (name) DO NOTHING;
         `);
         console.log("Datos iniciales insertados en 'payment_status'");

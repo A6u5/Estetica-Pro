@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -6,175 +6,180 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { 
-  Plus, 
-  Search, 
-  DollarSign, 
-  CreditCard,
-  User,
-  Calendar,
-  Filter,
-  Download,
-  TrendingUp,
-  TrendingDown
-} from 'lucide-react';
-
-// Mock data
-const payments = [
-  {
-    id: 1,
-    date: '2024-01-27',
-    clientName: 'María González',
-    service: 'Limpieza facial',
-    amount: 800,
-    method: 'efectivo',
-    status: 'completado',
-    appointmentId: 1
-  },
-  {
-    id: 2,
-    date: '2024-01-27',
-    clientName: 'Ana Rodríguez',
-    service: 'Manicure',
-    amount: 600,
-    method: 'tarjeta',
-    status: 'completado',
-    appointmentId: 2
-  },
-  {
-    id: 3,
-    date: '2024-01-26',
-    clientName: 'Carlos López',
-    service: 'Masaje relajante',
-    amount: 1200,
-    method: 'transferencia',
-    status: 'completado',
-    appointmentId: 3
-  },
-  {
-    id: 4,
-    date: '2024-01-25',
-    clientName: 'Sofia Martín',
-    service: 'Depilación',
-    amount: 900,
-    method: 'efectivo',
-    status: 'pendiente',
-    appointmentId: 4
-  },
-  {
-    id: 5,
-    date: '2024-01-24',
-    clientName: 'Laura Pérez',
-    service: 'Tratamiento capilar',
-    amount: 1500,
-    method: 'tarjeta',
-    status: 'completado',
-    appointmentId: 5
-  },
-  {
-    id: 6,
-    date: '2024-01-23',
-    clientName: 'Pedro Gómez',
-    service: 'Masaje deportivo',
-    amount: 1400,
-    method: 'transferencia',
-    status: 'completado',
-    appointmentId: 6
-  },
-];
-
-const paymentMethods = [
-  { id: 'efectivo', name: 'Efectivo', icon: DollarSign },
-  { id: 'tarjeta', name: 'Tarjeta de Crédito/Débito', icon: CreditCard },
-  { id: 'transferencia', name: 'Transferencia Bancaria', icon: TrendingUp },
-];
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Plus, Search, DollarSign, CreditCard, User, Calendar, Filter, Download, TrendingUp, TrendingDown, Edit, Trash2 } from 'lucide-react';
+import { formatDate, formatDateISO } from '../helpers/AppointmentComponentHelper';
+import { getPaymentMethods, getPaymentStatus } from '../services/MasterDataService';
+import { createPayment, deletePayment, exportPaymentsToExcel, getAllPayments, updatePayment } from '../services/PaymentService'
+import { getAppointments, getAppointmentsWithoutPayment } from '../services/AppointmentService';
+import { formatDateString, getStatusColor, paymentMethodsToShow, pendingAmount, todayRevenue, totalRevenue } from '../helpers/PaymentComponentHelper';
 
 export function Payments() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [methodFilter, setMethodFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [paymentStatus, setPaymentStatus] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [allAppointments, setAllAppointments] = useState<any[]>([]);
+  const [selectedPayment, setSelectedPayment] = useState<typeof payments[0] | null>(null);
+
+  useEffect(() => {
+    fetchPaymentMethods();
+    fetchPaymentStatus();
+    fetchAllAppointments();
+    fetchAppointments();
+    fetchPayments();
+  }, []);
+
+  const fetchPaymentMethods = async () => {
+    try {
+      const res = await getPaymentMethods();
+      setPaymentMethods(res);
+    } catch (error) {
+      console.error('Error al traer los métodos de pago:', error);
+    }
+  };
+  const fetchPaymentStatus = async () => {
+    try {
+      const res = await getPaymentStatus();
+      setPaymentStatus(res);
+    } catch (error) {
+      console.error('Error al traer los estados del pago:', error);
+    }
+  };
+
+  const fetchAppointments = async () => {
+    try {
+      const res = await getAppointmentsWithoutPayment();
+      setAppointments(res);
+    } catch (error) {
+      console.error('Error al traer los turnos:', error);
+    }
+  };
+
+  const fetchAllAppointments = async () => {
+    try {
+      const res = await getAppointments();
+      setAllAppointments(res);
+    } catch (error) {
+      console.error('Error al traer los turnos:', error);
+    }
+  };
+
+  const fetchPayments = async () => {
+    try {
+      const res = await getAllPayments();
+      setPayments(res);
+    } catch (err) {
+      console.error('Error al obtener pagos:', err);
+    }
+  };
+
+  const handleAddPayment = async (newPayment: any) => {
+    try {
+      const res = await createPayment(newPayment);
+      setPayments(prev => [...prev, res.payment]);
+    } catch (err) {
+      console.error('Error al registrar pago:', err);
+    }
+  };
+
+  const handleUpdatePayment = async (id: number, updatedPayment: any) => {
+    try {
+      const res = await updatePayment(id, updatedPayment);
+      setPayments(
+        payments.map((c) => (c.id === id ? res : c))
+      );
+    } catch (err) {
+      console.error('Error al actualizar pago:', err);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId: number) => {
+    try {
+      await deletePayment(paymentId);
+      setPayments(prev => prev.filter(a => a.id !== paymentId));
+    } catch (err) {
+      console.error('Error al eliminar pago:', err);
+    }
+  };
 
   const filteredPayments = payments.filter(payment => {
-    const matchesSearch = payment.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payment.service.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
-    const matchesMethod = methodFilter === 'all' || payment.method === methodFilter;
+    const matchesSearch = payment.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment.service_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || payment.payment_status_id === statusFilter;
+    const matchesMethod = methodFilter === 'all' || payment.payment_method_id === methodFilter;
     
     return matchesSearch && matchesStatus && matchesMethod;
   });
 
-  const totalRevenue = payments
-    .filter(p => p.status === 'completado')
-    .reduce((sum, p) => sum + p.amount, 0);
+  const PaymentForm = ({ payment, onClose, onSave }: { payment?: any, onClose: () => void,onSave: (data: any) => void; }) => {
+    
+    const [formData, setFormData] = useState({
+      appointment_id: payment?.appointment_id || '',
+      payment_method_id: payment?.payment_method_id || '',
+      payment_status_id: payment?.payment_status_id || 1,
+      amount: payment?.amount || 0,
+      payment_date: payment?.payment_date ? formatDateISO(new Date(payment.payment_date)) : ''
+    });
 
-  const pendingAmount = payments
-    .filter(p => p.status === 'pendiente')
-    .reduce((sum, p) => sum + p.amount, 0);
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { id, value, type } = e.target;
+      setFormData(prev => ({...prev,
+        [id]: type === "number" ? Number(value) : value
+      }));
+    };
 
-  const todayRevenue = payments
-    .filter(p => p.date === '2024-01-27' && p.status === 'completado')
-    .reduce((sum, p) => sum + p.amount, 0);
+    const handleSelectChange = (field: string, value: string) => {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completado': return 'bg-green-100 text-green-800';
-      case 'pendiente': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelado': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completado': return 'Completado';
-      case 'pendiente': return 'Pendiente';
-      case 'cancelado': return 'Cancelado';
-      default: return status;
-    }
-  };
-
-  const getMethodText = (method: string) => {
-    const methodObj = paymentMethods.find(m => m.id === method);
-    return methodObj?.name || method;
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-AR');
-  };
-
-  const PaymentForm = ({ onClose }: { onClose: () => void }) => (
+    const handleSubmit = () => {
+      if (payment) onSave({ ...formData, id: payment.id });
+      else onSave(formData);
+      onClose();
+    };
+    
+    return(
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <div>
-          <Label htmlFor="clientName">Cliente</Label>
-          <Input 
-            id="clientName" 
-            placeholder="Nombre del cliente"
-          />
-        </div>
-        <div>
-          <Label htmlFor="service">Servicio</Label>
-          <Input 
-            id="service" 
-            placeholder="Servicio prestado"
-          />
-        </div>
+            <Label htmlFor="service">Turno</Label>
+            <Select value={formData.appointment_id}
+            disabled={!!payment}
+            onValueChange={(value:any) => handleSelectChange("appointment_id", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar turno" />
+              </SelectTrigger>
+              <SelectContent>
+                {(payment? allAppointments : appointments).map(appointment => (
+                  <SelectItem key={appointment.id} value={appointment.id}>
+                    <b>Cliente:</b> {appointment.client.name} - <b>Servicio:</b> {appointment.service.name} - <b>Fecha:</b>Fecha: {formatDateString(appointment.appointment_date)} {appointment.appointment_time}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
       </div>
       
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="amount">Monto</Label>
           <Input 
             id="amount" 
             type="number"
             placeholder="0"
+            value={formData.amount}
+            onChange={handleChange}
           />
         </div>
         <div>
           <Label htmlFor="method">Método de pago</Label>
-          <Select>
+          <Select value={formData.payment_method_id}
+          onValueChange={(value: any) => handleSelectChange("payment_method_id", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Seleccionar método" />
             </SelectTrigger>
@@ -187,40 +192,47 @@ export function Payments() {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="status">Estado</Label>
-          <Select defaultValue="completado">
+          <Select value={formData.payment_status_id ? formData.payment_status_id : 1}
+          onValueChange={(value: any) => handleSelectChange("payment_status_id", value)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="completado">Completado</SelectItem>
-              <SelectItem value="pendiente">Pendiente</SelectItem>
+              {paymentStatus.map(status => (
+                <SelectItem key={status.id} value={status.id}>
+                  {status.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
-      </div>
-
-      <div>
-        <Label htmlFor="date">Fecha</Label>
-        <Input 
-          id="date" 
-          type="date"
-          defaultValue={new Date().toISOString().split('T')[0]}
-        />
+        <div>
+          <Label htmlFor="payment_date">Fecha</Label>
+          <Input 
+            id="payment_date" 
+            type="date"
+            value={formData.payment_date}
+            onChange={handleChange}
+          />
+        </div>
       </div>
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onClose}>
           Cancelar
         </Button>
-        <Button onClick={onClose}>
-          Registrar Pago
+        <Button onClick={handleSubmit}>
+          {payment ? 'Actualizar' : 'Registrar'} Pago
         </Button>
       </div>
     </div>
   );
-
+  }
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -230,7 +242,7 @@ export function Payments() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Ingresos Totales</p>
-                <p className="text-2xl font-bold text-green-600">${totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-600">${totalRevenue(payments).toLocaleString()}</p>
               </div>
               <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
                 <DollarSign className="h-6 w-6 text-green-600" />
@@ -244,7 +256,7 @@ export function Payments() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Ingresos de Hoy</p>
-                <p className="text-2xl font-bold text-blue-600">${todayRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-600">${todayRevenue(payments).toLocaleString()}</p>
               </div>
               <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-blue-600" />
@@ -258,7 +270,7 @@ export function Payments() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Pagos Pendientes</p>
-                <p className="text-2xl font-bold text-yellow-600">${pendingAmount.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-yellow-600">${pendingAmount(payments).toLocaleString()}</p>
               </div>
               <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center">
                 <TrendingDown className="h-6 w-6 text-yellow-600" />
@@ -274,13 +286,14 @@ export function Payments() {
           <div className="flex justify-between items-center">
             <CardTitle>Gestión de Pagos</CardTitle>
             <div className="flex gap-2">
-              <Button variant="outline">
+              <Button variant="outline"
+              onClick={() => exportPaymentsToExcel(payments)}>
                 <Download className="h-4 w-4 mr-2" />
                 Exportar
               </Button>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button variant="buttonAdd">
                     <Plus className="h-4 w-4 mr-2" />
                     Registrar Pago
                   </Button>
@@ -289,7 +302,9 @@ export function Payments() {
                   <DialogHeader>
                     <DialogTitle>Registrar Nuevo Pago</DialogTitle>
                   </DialogHeader>
-                  <PaymentForm onClose={() => setIsAddDialogOpen(false)} />
+                  <PaymentForm 
+                  onClose={() => setIsAddDialogOpen(false)} 
+                  onSave={handleAddPayment}/>
                 </DialogContent>
               </Dialog>
             </div>
@@ -314,9 +329,11 @@ export function Payments() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="completado">Completado</SelectItem>
-                <SelectItem value="pendiente">Pendiente</SelectItem>
-                <SelectItem value="cancelado">Cancelado</SelectItem>
+                {paymentStatus.map(status => (
+                  <SelectItem key={status.id} value={status.id}>
+                    {status.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -346,20 +363,20 @@ export function Payments() {
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium">{payment.clientName}</span>
-                      <Badge className={getStatusColor(payment.status)}>
-                        {getStatusText(payment.status)}
+                      <span className="font-medium">{payment.client_name}</span>
+                      <Badge className={getStatusColor(payment.payment_status)}>
+                        {payment.payment_status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">{payment.service}</p>
+                    <p className="text-sm text-muted-foreground mb-1">{payment.service_name}</p>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {formatDate(payment.date)}
+                        {formatDateString(payment.payment_date)}
                       </div>
                       <div className="flex items-center gap-1">
                         <CreditCard className="h-3 w-3" />
-                        {getMethodText(payment.method)}
+                        {payment.payment_method}
                       </div>
                     </div>
                   </div>
@@ -371,6 +388,17 @@ export function Payments() {
                   </div>
                   <div className="text-xs text-muted-foreground">
                     #{payment.id.toString().padStart(4, '0')}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                    variant="outline" size="sm"
+                    onClick={() => setSelectedPayment(payment)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm"
+                    onClick={() => handleDeletePayment(payment.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -393,14 +421,17 @@ export function Payments() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {paymentMethods.map((method) => {
-              const methodPayments = payments.filter(p => p.method === method.id && p.status === 'completado');
-              const methodTotal = methodPayments.reduce((sum, p) => sum + p.amount, 0);
+            {paymentMethodsToShow.map((method) => {
+              const methodPayments = payments.filter(
+                (p) => method.ids.includes(p.payment_method.toLowerCase()) && p.payment_status === 'Pagado'
+              );
+              
+              const methodTotal = methodPayments.reduce((sum, p) => sum + Number(p.amount), 0);
               const methodCount = methodPayments.length;
               const Icon = method.icon;
 
               return (
-                <Card key={method.id}>
+                <Card key={method.name}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <Icon className="h-5 w-5 text-muted-foreground" />
@@ -415,6 +446,23 @@ export function Payments() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Appointment Dialog */}
+      <Dialog open={!!selectedPayment} onOpenChange={() => setSelectedPayment(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Pago</DialogTitle>
+          </DialogHeader>
+          {selectedPayment && (
+            <PaymentForm 
+              onSave={(data) => handleUpdatePayment(data.id, data)}
+              payment={selectedPayment} 
+              onClose={() => setSelectedPayment(null)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

@@ -198,3 +198,54 @@ export const deleteAppointment = async (req, res) => {
     res.status(500).json({ message: "Error al eliminar turno" });
   }
 };
+
+
+export const getAppointmentsWithoutPayment = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        a.id,
+        a.appointment_date,
+        a.appointment_time,
+        a.professional,
+        a.created_at,
+        
+        -- cliente completo
+        json_build_object(
+          'id', c.id,
+          'name', c.name,
+          'email', c.email,
+          'phone', c.phone,
+          'birthDate', c.birthDate,
+          'preferences', c.preferences,
+          'fecha_registro', c.fecha_registro
+        ) AS client,
+        
+        -- servicio completo
+        json_build_object(
+          'id', s.id,
+          'name', s.name,
+          'duration', s.duration
+        ) AS service,
+        
+        -- estado del turno
+        json_build_object(
+          'id', st.id,
+          'name', st.name
+        ) AS status
+
+      FROM appointments a
+      JOIN clients c ON a.client_id = c.id
+      JOIN services s ON a.service_id = s.id
+      LEFT JOIN status st ON a.status_id = st.id
+      LEFT JOIN payments p ON a.id = p.appointment_id
+      WHERE p.appointment_id IS NULL
+      ORDER BY a.appointment_date, a.appointment_time ASC;
+    `);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error obteniendo turnos sin pago:", err);
+    res.status(500).json({ message: "Error al obtener turnos sin pago" });
+  }
+};
