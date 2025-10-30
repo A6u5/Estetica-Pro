@@ -6,7 +6,7 @@ import { getStatusColor, getStatusText, formatDateISO } from '../helpers/Appoint
 import { getAppointments } from "../services/AppointmentService";
 import { useEffect, useState } from 'react';
 import { getAllPayments } from '../services/PaymentService';
-import { revenueChangeVsYesterday, todayRevenue } from '../helpers/PaymentComponentHelper';
+import { revenueChangeVsYesterday, todayRevenue, weeklyRevenue } from '../helpers/PaymentComponentHelper';
 
 // Mock data
 const todayStats = {
@@ -22,15 +22,15 @@ const lowStockItems = [
   { name: 'Toallas desechables', current: 15, minimum: 20 },
 ];
 
-const weeklyRevenue = [
-  { day: 'Lun', amount: 1200 },
-  { day: 'Mar', amount: 1800 },
-  { day: 'Mié', amount: 2200 },
-  { day: 'Jue', amount: 1600 },
-  { day: 'Vie', amount: 2850 },
-  { day: 'Sáb', amount: 3200 },
-  { day: 'Dom', amount: 900 },
-];
+// const weeklyRevenue = [
+//   { day: 'Lun', amount: 1200 },
+//   { day: 'Mar', amount: 1800 },
+//   { day: 'Mié', amount: 2200 },
+//   { day: 'Jue', amount: 1600 },
+//   { day: 'Vie', amount: 2850 },
+//   { day: 'Sáb', amount: 3200 },
+//   { day: 'Dom', amount: 900 },
+// ];
 
 export function Dashboard({ onViewChange }: { onViewChange: (view: string) => void }) {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -222,18 +222,18 @@ export function Dashboard({ onViewChange }: { onViewChange: (view: string) => vo
         </CardHeader>
         <CardContent>
           <div className="flex items-end justify-between h-64 gap-2">
-            {weeklyRevenue.map((day, index) => (
+            {weeklyRevenue(payments).map((day, index) => (
               <div key={index} className="flex flex-col items-center flex-1">
                 <div 
                   className="bg-primary rounded-t-sm w-full transition-all hover:bg-primary/80"
                   style={{ 
-                    height: `${(day.amount / Math.max(...weeklyRevenue.map(d => d.amount))) * 200}px`,
+                    height: `${(day.total / Math.max(...weeklyRevenue(payments).map(d => d.total))) * 200}px`,
                     minHeight: '20px'
                   }}
                 />
                 <div className="mt-2 text-center">
                   <p className="text-xs text-muted-foreground">{day.day}</p>
-                  <p className="text-sm font-medium">${day.amount.toLocaleString()}</p>
+                  <p className="text-sm font-medium">${day.total.toLocaleString()}</p>
                 </div>
               </div>
             ))}

@@ -59,9 +59,40 @@ export const revenueChangeVsYesterday = (payments: any) => {
   };
 };
 
-
 export const paymentMethodsToShow = [
   { ids: ['efectivo'], name: 'Efectivo', icon: DollarSign },
   { ids: ['tarjeta de crédito', 'tarjeta de débito'], name: 'Tarjeta de Crédito/Débito', icon: CreditCard },
   { ids: ['transferencia bancaria', 'mercado pago'], name: 'Transferencia Bancaria/ Mercado Pago', icon: TrendingUp },
 ];
+
+export const weeklyRevenue = (payments: any) => {
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  const day = now.getDay(); 
+  const diffToMonday = day === 0 ? -6 : 1 - day; 
+  startOfWeek.setDate(now.getDate() + diffToMonday);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 7);
+
+  const days = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+  const weeklyTotals = Array(7).fill(0);
+
+  payments.forEach((p: any) => {
+    const date = new Date(p.payment_date);
+    if (date >= startOfWeek && date < endOfWeek 
+      && (p.payment_status === "Pagado" || p.payment_status === "Señado")) 
+    {
+      let dayIndex = date.getDay() - 1; 
+      if (dayIndex < 0) dayIndex = 6;
+      weeklyTotals[dayIndex] += Number(p.amount);
+    }
+  });
+
+  return days.map((day, index) => ({
+    day,
+    total: weeklyTotals[index],
+  }));
+};
+
