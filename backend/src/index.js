@@ -5,6 +5,7 @@ import { initDB } from "./initDB.js";
 import { appointmentRouter } from "./routes/appointmentRoutes.js";
 import { masterDataRouter } from "./routes/masterDataRoutes.js";
 import { paymentRouter } from "./routes/paymentRoutes.js";
+import { authRouter } from "./routes/authRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -15,6 +16,8 @@ app.use("/api/clients", clientRouter);
 app.use("/api/appointments", appointmentRouter);
 app.use("/api/masterData", masterDataRouter);
 app.use("/api/payments", paymentRouter);
+app.use("/api/auth", authRouter);
+
 // Inicializar DB y levantar servidor
 initDB();
 

@@ -4837,3 +4837,22 @@ html {
     opacity: 0;
   }
 }
+.login-bg {
+  background: linear-gradient(rgb(0 0 0 / 0%), rgb(86 35 17 / 55%)), 
+  url(/src/assets/logo.png) center / cover no-repeat;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.bg-form-auth{
+  background-color: #795548eb;
+}
+.text-whitesmoke{
+  color: rgba(245, 245, 245, 0.952);
+}
+.border-form{
+  border-style: var(--tw-border-style);
+  border-width: 2px;
+  border-color: #32170e;
+}
