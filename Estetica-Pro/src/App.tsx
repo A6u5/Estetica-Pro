@@ -5,7 +5,7 @@ import { Clients } from './components/Clients';
 import { Appointments } from './components/Appointments';
 import { Payments } from './components/Payments';
 import { Inventory } from './components/Inventory';
-import { Reports } from './components/Reports';
+import Reports from './components/Reports';
 import AuthForm from './components/AuthForm';
 
 export default function App() {

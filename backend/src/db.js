@@ -3,6 +3,9 @@ import { Pool } from "pg";
 
 dotenv.config();
 
+console.log("USER:", process.env.PGUSER);
+console.log("PASSWORD:", process.env.PGPASSWORD);
+
 export const pool = new Pool({
   user: process.env.PGUSER,
   host: process.env.PGHOST,
@@ -19,3 +22,4 @@ pool.query("SELECT NOW()", (err, res) => {
     console.log("✅ Conectado a PostgreSQL:", res.rows[0]);
   }
 });
+

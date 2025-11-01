@@ -199,10 +199,10 @@ export default function AuthForm({onLogin}) {
               </>
             )}
             <div className="text-center">
-              <Button variant="buttonAdd" 
-              onClick={() => handleSubmit}>
-                {isRegister ? "Crear una cuenta" : "Iniciar sesión"}
+              <Button variant="buttonAdd" type="submit">
+              {isRegister ? "Crear una cuenta" : "Iniciar sesión"}
               </Button>
+
             </div>
 
             <p className="text-sm text-gray-500 text-whitesmoke text-center mt-2">
