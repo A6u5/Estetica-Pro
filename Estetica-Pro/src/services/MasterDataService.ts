@@ -18,3 +18,7 @@ export const getPaymentStatus = async () => {
   const res = await axios.get(`${API_URL}/paymentStatus`);
   return res.data;
 }
+export const getCategories = async () => {
+  const res = await axios.get(`${API_URL}/categories`);
+  return res.data;
+}

@@ -7,6 +7,8 @@ import { getAppointments } from "../services/AppointmentService";
 import { useEffect, useState } from 'react';
 import { getAllPayments } from '../services/PaymentService';
 import { revenueChangeVsYesterday, todayRevenue, weeklyRevenue } from '../helpers/PaymentComponentHelper';
+import { getLowStock } from '../services/InventoryService';
+import { getUniqueClientsCount, getNewClientsCount } from '../helpers/ClientComponentHelper'
 
 // Mock data
 const todayStats = {
@@ -16,11 +18,11 @@ const todayStats = {
   lowStock: 3
 };
 
-const lowStockItems = [
-  { name: 'Crema hidratante', current: 2, minimum: 5 },
-  { name: 'Aceite esencial', current: 1, minimum: 3 },
-  { name: 'Toallas desechables', current: 15, minimum: 20 },
-];
+// const lowStockItems = [
+//   { name: 'Crema hidratante', current: 2, minimum: 5 },
+//   { name: 'Aceite esencial', current: 1, minimum: 3 },
+//   { name: 'Toallas desechables', current: 15, minimum: 20 },
+// ];
 
 // const weeklyRevenue = [
 //   { day: 'Lun', amount: 1200 },
@@ -35,14 +37,28 @@ const lowStockItems = [
 export function Dashboard({ onViewChange }: { onViewChange: (view: string) => void }) {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
+  const [pastAppointments, setPastAppointments] = useState<any[]>([]);
   const [todayAppointmentsCountBytatus, setTodayAppointmentsCountBytatus] = useState<any>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<any[]>([]);
   const { change } = revenueChangeVsYesterday(payments);
+  const totalClients = getUniqueClientsCount(todayAppointments);
+  const newClients = getNewClientsCount(todayAppointments, pastAppointments);
   
   useEffect(() => {
     fetchAppointments();
     fetchPayments();
+    fetchLowStockItems();
   }, []);
+
+  const fetchLowStockItems = async () => {
+    try {
+      const res = await getLowStock();
+      setLowStockItems(res);
+    } catch (err) {
+      console.error('Error al obtener stock bajo:', err);
+    }
+  };
 
   const fetchAppointments = async () => {
     try {
@@ -74,6 +90,7 @@ export function Dashboard({ onViewChange }: { onViewChange: (view: string) => vo
       return appointmentDateStr === currentDateStr;
     });
     setTodayAppointments(todayAppointments);
+    setPastAppointments(appointments.filter(a => a.appointment_date < today));
     countAppointmentsByStatus();    
   }, [appointments]); 
 
@@ -128,9 +145,9 @@ export function Dashboard({ onViewChange }: { onViewChange: (view: string) => vo
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{todayStats.clients}</div>
+            <div className="text-2xl font-bold">{totalClients}</div>
             <p className="text-xs text-muted-foreground">
-              2 clientes nuevos
+              {newClients} clientes nuevos
             </p>
           </CardContent>
         </Card>
@@ -141,7 +158,7 @@ export function Dashboard({ onViewChange }: { onViewChange: (view: string) => vo
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{todayStats.lowStock}</div>
+            <div className="text-2xl font-bold text-destructive">{lowStockItems.length}</div>
             <p className="text-xs text-muted-foreground">
               Productos requieren reposición
             </p>
@@ -202,13 +219,17 @@ export function Dashboard({ onViewChange }: { onViewChange: (view: string) => vo
                       Stock actual: {item.current} | Mínimo: {item.minimum}
                     </p>
                   </div>
-                  <Button size="sm" variant="destructive">
+                  <Button size="sm" 
+                  onClick={() => onViewChange("inventory")}
+                  variant="destructive">
                     Reabastecer
                   </Button>
                 </div>
               ))}
             </div>
-            <Button variant="outline" className="w-full mt-4">
+            <Button variant="outline" 
+            onClick={() => onViewChange("inventory")}
+            className="w-full mt-4">
               Ver inventario completo
             </Button>
           </CardContent>

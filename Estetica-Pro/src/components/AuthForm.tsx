@@ -15,7 +15,7 @@ export default function AuthForm({onLogin}) {
 
   const [errors, setErrors] = useState<any>({});
 
-  const handleChange = (e) => {
+  const handleChange = (e: { target: { id: any; value: any; type: any; checked: any; }; }) => {
     const { id, value, type, checked } = e.target;
     const val = type === "checkbox" ? checked : value;
 
@@ -27,42 +27,42 @@ export default function AuthForm({onLogin}) {
     // Validación en tiempo real
     if (id === "password") {
       if (isRegister && value.length < 6) {
-        setErrors((prev) => ({ ...prev, password: "La contraseña debe tener al menos 6 caracteres" }));
+        setErrors((prev: any) => ({ ...prev, password: "La contraseña debe tener al menos 6 caracteres" }));
       } else {
-        setErrors((prev) => ({ ...prev, password: null }));
+        setErrors((prev: any) => ({ ...prev, password: null }));
       }
 
       if (isRegister && formData.confirmPassword && value !== formData.confirmPassword) {
-        setErrors((prev) => ({ ...prev, confirmPassword: "Las contraseñas no coinciden" }));
+        setErrors((prev: any) => ({ ...prev, confirmPassword: "Las contraseñas no coinciden" }));
       } else {
-        setErrors((prev) => ({ ...prev, confirmPassword: null }));
+        setErrors((prev: any) => ({ ...prev, confirmPassword: null }));
       }
     }
 
     if (id === "confirmPassword") {
       if (isRegister && value !== formData.password) {
-        setErrors((prev) => ({ ...prev, confirmPassword: "Las contraseñas no coinciden" }));
+        setErrors((prev: any) => ({ ...prev, confirmPassword: "Las contraseñas no coinciden" }));
       } else {
-        setErrors((prev) => ({ ...prev, confirmPassword: null }));
+        setErrors((prev: any) => ({ ...prev, confirmPassword: null }));
       }
     }
 
     if (id === "username" && value.trim() === "") {
-      setErrors((prev) => ({ ...prev, username: "El nombre de usuario es obligatorio" }));
+      setErrors((prev: any) => ({ ...prev, username: "El nombre de usuario es obligatorio" }));
     } else if (id === "username") {
-      setErrors((prev) => ({ ...prev, username: null }));
+      setErrors((prev: any) => ({ ...prev, username: null }));
     }
 
     if (id === "terms") {
       if (!checked) {
-        setErrors((prev) => ({ ...prev, terms: "Debes aceptar los términos y condiciones" }));
+        setErrors((prev: any) => ({ ...prev, terms: "Debes aceptar los términos y condiciones" }));
       } else {
-        setErrors((prev) => ({ ...prev, terms: null }));
+        setErrors((prev: any) => ({ ...prev, terms: null }));
       }
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
 
     setErrors("");
@@ -73,10 +73,14 @@ export default function AuthForm({onLogin}) {
           setErrors("Las contraseñas no coinciden");
           return;
         }
-        await register(formData.username, formData.password);
-        alert("Registro exitoso, ahora inicia sesión");
-        setIsRegister(false);
-        setFormData({ username: "", password: "", confirmPassword: "", terms: false });
+        try {
+          await register(formData.username, formData.password);
+          alert("Registro exitoso, ahora inicia sesión");
+          setIsRegister(false);
+          setFormData({ username: "", password: "", confirmPassword: "", terms: false });
+        } catch (error: any) {
+          alert(error);
+        }
       } else {
         const data = await login(formData.username, formData.password);
         if (data) {
