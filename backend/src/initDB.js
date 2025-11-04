@@ -123,6 +123,29 @@ export const initDB = async () => {
     } catch (err) {
         console.error("Error creando tabla usuarios:", err);
     }
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS stock (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                category_id INT NOT NULL,
+                currentStock INT DEFAULT 0,
+                minimumStock INT DEFAULT 0,
+                maxStock INT DEFAULT 0,
+                unitPrice DECIMAL(10,2) NOT NULL,
+                supplier VARCHAR(150),
+                lastRestock DATE,
+                description TEXT,
+                CONSTRAINT fk_stock_category FOREIGN KEY (category_id) REFERENCES categories(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+            );
+        `);
+        console.log("Tabla 'stock' lista");
+    } catch (err) {
+        console.error("Error creando tabla stock:", err);
+    }
+
     
 
     // insert de datos maestras

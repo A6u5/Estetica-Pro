@@ -43,3 +43,14 @@ export const getAllPaymentStatus = async (req, res) => {
         res.status(500).json({ error: "Error al obtener los estados de un pago" });
     }
 };
+
+// Obtener todos las categorias
+export const getAllCategories = async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM categories ORDER BY id ASC");
+        res.json(result.rows);
+    } catch (error) {
+        console.error("Error obteniendo categorias:", error);
+        res.status(500).json({ error: "Error al obtener las categorias" });
+    }
+};

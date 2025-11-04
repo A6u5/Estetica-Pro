@@ -8,16 +8,27 @@ export const register = async (req, res) => {
     return res.status(400).json({ message: 'Username y password son obligatorios' });
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-
   try {
+    // Contar cuántos usuarios hay actualmente
+    const countResult = await pool.query('SELECT COUNT(*) FROM users');
+    const userCount = parseInt(countResult.rows[0].count, 10);
+
+    if (userCount >= 4) {
+      return res.status(403).json({ message: 'No se pueden registrar más usuarios (máximo 4)' });
+    }
+
+    // Encriptar la contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Crear el usuario
     const result = await pool.query(
       'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username',
       [username, hashedPassword]
     );
+
     res.json({ user: result.rows[0] });
   } catch (err) {
-    if (err.code === '23505') { // Unique violation
+    if (err.code === '23505') {
       return res.status(400).json({ message: 'El usuario ya existe' });
     }
     console.error(err);

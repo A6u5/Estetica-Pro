@@ -7,7 +7,7 @@ import { masterDataRouter } from "./routes/masterDataRoutes.js";
 import { paymentRouter } from "./routes/paymentRoutes.js";
 import { authRouter } from "./routes/authRoutes.js";
 import reportRouter from "./routes/reportRoutes.js";
-
+import { inventoryRouter } from "./routes/inventoryRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -20,9 +20,10 @@ app.use("/api/masterData", masterDataRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/reports", reportRouter);
+app.use("/api/inventory", inventoryRouter);
 
 // Inicializar DB y levantar servidor
-initDB();
+// initDB();
 
 const PORT = 5000;
 
@@ -36,4 +37,3 @@ const startServer = async () => {
 };
 
 startServer();
-
