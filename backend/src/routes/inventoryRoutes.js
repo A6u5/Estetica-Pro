@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createStock, deleteStock, getAllStock, getLowStock, updateStock } from "../controllers/Inventorycontroller.js";
+import { createStock, deleteStock, getAllStock, getLowStock, updateStock } from "../controllers/InventoryController.js";
 
 export const inventoryRouter = Router();
 
