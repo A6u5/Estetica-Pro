@@ -100,7 +100,7 @@ export function Layout({ children, currentView, onViewChange, isLoggedIn, onLogo
               onClick={onLogout}
             >
               <LogOut className="h-5 w-5" />
-              Logout
+              Salir
             </Button>
           </header>
         </>

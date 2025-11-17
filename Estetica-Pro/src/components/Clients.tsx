@@ -99,7 +99,9 @@ export function Clients() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="name">Nombre completo</Label>
-            <Input id="name" value={formData.name} onChange={handleChange} />
+            <Input id="name" value={formData.name}
+            placeholder='Nombre completo'
+            onChange={handleChange} />
           </div>
           <div>
             <Label htmlFor="birthDate">Fecha de nacimiento</Label>
@@ -118,13 +120,16 @@ export function Clients() {
             <Input
               id="email"
               type="email"
+               placeholder='Email'
               value={formData.email}
               onChange={handleChange}
             />
           </div>
           <div>
             <Label htmlFor="phone">Teléfono</Label>
-            <Input id="phone" value={formData.phone} onChange={handleChange} />
+            <Input id="phone" value={formData.phone} 
+            placeholder='Teléfono'
+            onChange={handleChange} />
           </div>
         </div>
 

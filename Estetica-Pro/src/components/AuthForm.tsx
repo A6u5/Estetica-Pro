@@ -4,7 +4,7 @@ import { login, register } from "../services/AuthService";
 import background from '../assets/logo.png'; // reemplaza con el nombre de tu imagen
 
 
-export default function AuthForm({onLogin}) {
+export default function AuthForm({ onLogin }: { onLogin: () => void }) {
   const [isRegister, setIsRegister] = useState(false); // true = registro, false = login
   const [formData, setFormData] = useState({
     username: "",
@@ -53,13 +53,13 @@ export default function AuthForm({onLogin}) {
       setErrors((prev: any) => ({ ...prev, username: null }));
     }
 
-    if (id === "terms") {
-      if (!checked) {
-        setErrors((prev: any) => ({ ...prev, terms: "Debes aceptar los términos y condiciones" }));
-      } else {
-        setErrors((prev: any) => ({ ...prev, terms: null }));
-      }
-    }
+    // if (id === "terms") {
+    //   if (!checked) {
+    //     setErrors((prev: any) => ({ ...prev, terms: "Debes aceptar los términos y condiciones" }));
+    //   } else {
+    //     setErrors((prev: any) => ({ ...prev, terms: null }));
+    //   }
+    // }
   };
 
   const handleSubmit = async (e: { preventDefault: () => void; }) => {
@@ -101,7 +101,7 @@ export default function AuthForm({onLogin}) {
 
     if (isRegister) {
       if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Las contraseñas no coinciden";
-      if (!formData.terms) newErrors.terms = "Debes aceptar los términos y condiciones";
+      // if (!formData.terms) newErrors.terms = "Debes aceptar los términos y condiciones";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -132,7 +132,7 @@ export default function AuthForm({onLogin}) {
               <input
                 id="username"
                 type="text"
-                placeholder="JohnDoe"
+                placeholder="usuario"
                 value={formData.username}
                 onChange={handleChange}
                 className={`text-whitesmoke border-form sm:text-sm rounded-lg block w-full p-1 ${
@@ -178,8 +178,8 @@ export default function AuthForm({onLogin}) {
                   {errors.confirmPassword && <p className="text-whitesmoke text-sm mt-1">{errors.confirmPassword}</p>}
                 </div>
 
-                <div className="flex items-start">
-                  <div className="flex items-center h-5">
+                {/* <div className="flex items-start"> */}
+                  {/* <div className="flex items-center h-5">
                     <input
                       id="terms"
                       type="checkbox"
@@ -189,17 +189,17 @@ export default function AuthForm({onLogin}) {
                         errors.terms ? "border-red-500" : "border-gray-300"
                       }`}
                     />
-                  </div>
-                  <div className="ml-3 text-sm">
+                  </div> */}
+                  {/* <div className="ml-3 text-sm">
                     <label htmlFor="terms" className="font-light text-whitesmoke text-gray-500">
                       Acepto los{" "}
                       <a href="#" className="font-medium text-primary-600 hover:underline">
                         Términos y Condiciones
                       </a>
                     </label>
-                  </div>
-                </div>
-                {errors.terms && <p className="text-whitesmoke text-sm mt-1">{errors.terms}</p>}
+                  </div> */}
+                {/* </div> */}
+                {/* {errors.terms && <p className="text-whitesmoke text-sm mt-1">{errors.terms}</p>} */}
               </>
             )}
             <div className="text-center">
