@@ -30,9 +30,9 @@ export const getReports = async (req, res) => {
 
     const hourlyDistributionQuery = `
       SELECT 
-        TO_CHAR(a.appointment_date, 'HH24:00') AS hour,
+        TO_CHAR(appointment_time, 'HH24:MI') AS hour,
         COUNT(*) AS appointments
-      FROM appointments a
+      FROM appointments
       GROUP BY 1
       ORDER BY 1;
     `;
