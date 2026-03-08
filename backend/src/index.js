@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { clientRouter } from "./routes/clientRoutes.js";
-import { initDB } from "./initDB.js";
+import { initDB } from "./database/initDB.js";
 import { appointmentRouter } from "./routes/appointmentRoutes.js";
 import { masterDataRouter } from "./routes/masterDataRoutes.js";
 import { paymentRouter } from "./routes/paymentRoutes.js";

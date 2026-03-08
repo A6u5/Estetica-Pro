@@ -1,4 +1,4 @@
-import { pool } from "../db.js";
+import { pool } from "../database/db.js";
 
 // Obtener todos los turnos con datos relacionados
 export const getAppointments = async (req, res) => {

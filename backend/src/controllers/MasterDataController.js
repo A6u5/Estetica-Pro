@@ -1,4 +1,4 @@
-import { pool } from "../db.js";
+import { pool } from "../database/db.js";
 
 // Obtener todos los status
 export const getAllStatus = async (req, res) => {
