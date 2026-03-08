@@ -192,7 +192,7 @@ La aplicación estará disponible en:
 ![Stock](docs/screenshots/Stock.png)
 ---
 
-### 📈 Resumen
+### 📈 Resúmen
 ![Resumen](docs/screenshots/Resumen.png)
 
 ## 🚀 Posibles mejoras futuras
